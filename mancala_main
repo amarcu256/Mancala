@@ -1,0 +1,246 @@
+def move(board,playerNum):
+    place=int(input("Please enter which placement you would like to move."))
+    if playerNum == 1:
+        return place
+    
+
+class MancalaPlayerScore:
+    def __init__(self, player_name):
+        self.player_name = player_name
+        self.score = 0
+
+    def add_points(self, points):
+        self.score += points
+
+    def get_score(self):
+        return self.score
+
+    def reset_score(self):
+        self.score = 0
+
+
+def printBoard(x, player1Score, player2Score):
+    player1_str = str(player1Score)
+    player2_str = str(player2Score)
+    
+    if len(player1_str) == 1:
+        player1_str = "  " + player1_str + "  "
+    elif len(player1_str) == 2:
+        player1_str = " " + player1_str + " "
+    
+    if len(player2_str) == 1:
+        player2_str = "  " + player2_str + "  "
+    elif len(player2_str) == 2:
+        player2_str = " " + player2_str + " "
+
+    print("|" + player2_str + "|")
+    
+    for i in range(6):
+        left = str(x[i][0])
+        right = str(x[i][1])
+
+        if len(left) == 1:
+            left = " " + left
+        if len(right) == 1:
+            right = " " + right
+
+        print("|" + left + " | " + right + "|")
+
+    print("|" + player1_str + "|")
+
+import time
+
+def boardChange(board, pitIndex, currentPlayer, player1Score, player2Score):
+    if pitIndex < 0 or pitIndex > 5 or currentPlayer not in [1, 2]:
+        print("Invalid move!")
+        return board, player1Score, player2Score
+
+    row = 0 if currentPlayer == 1 else 1
+    stones = board[pitIndex][row]
+
+    if stones == 0:
+        print("Selected pit is empty! Choose another.")
+        return board, player1Score, player2Score
+
+    board[pitIndex][row] = 0
+    currentPit = pitIndex
+    
+
+    while stones > 0:
+        leland = 0
+        if row == 0:
+            if currentPlayer==1:
+                currentPit += 1
+                if currentPit == 6:
+                    if currentPlayer == 1:
+                        player1Score += 1
+                        stones -= 1
+                    if stones > 0: 
+                        row = 1 
+                        currentPit = 5 
+                elif stones > 0: 
+                    board[currentPit][row] += 1
+                    stones -= 1
+            else:
+                
+                if currentPit == 6: 
+                    if currentPlayer == 1:
+                        player1Score += 1
+                        stones -= 1
+                    if stones > 0:  
+                        row = 1  
+                        currentPit = 5  
+                elif stones > 0: 
+                    board[currentPit][row] += 1
+                    stones -= 1
+                currentPit += 1
+        else:
+            if currentPlayer==2:
+                currentPit-=1
+                if currentPit == -1:
+                    if currentPlayer == 2:
+                        player2Score += 1
+                        stones -= 1
+                    if stones > 0: 
+                        row = 0  
+                        currentPit = 0 
+                elif stones > 0: 
+                    board[currentPit][row] += 1
+                    stones -= 1
+            else:
+                if currentPit == -1:  
+                    if currentPlayer == 2:
+                       player2Score += 1
+                       stones -= 1
+                    if stones > 0:  
+                        row = 0  
+                        currentPit = 0  
+                elif stones > 0:  
+                    board[currentPit][row] += 1
+                    stones -= 1
+                currentPit-=1
+
+        print()
+        printBoard(board, player1Score, player2Score)
+        time.sleep(0.5)
+
+    return board, player1Score, player2Score
+
+class Player:
+    def __init__(self, name, row):
+        self.name = name
+        self.row = row 
+        self.score = 0
+
+    def add_score(self, points):
+        self.score += points
+
+
+class Player:
+    def __init__(self, name, row):
+        self.name = name
+        self.row = row
+        self.score = 0
+
+    def add_score(self, points):
+        self.score += points
+
+
+class MancalaGame:
+    def __init__(self, player1_name="Player 1", player2_name="Player 2"):
+        self.board = [[4, 4] for _ in range(6)] 
+        self.player1 = Player(player1_name, 0)
+        self.player2 = Player(player2_name, 1)
+        self.current_player = self.player1
+
+        player1_score = str(self.player1.score).zfill(2)
+        player2_score = str(self.player2.score).zfill(2)
+
+        print("|" + player2_score.center(6) + "|")
+        for i in range(6):
+            top = str(self.board[i][1]).zfill(2)
+            bottom = str(self.board[i][0]).zfill(2)
+            print(f"| {top} | {bottom} |")
+        print("|" + player1_score.center(6) + "|")
+
+    def is_valid_move(self, pit_index):
+        if pit_index < 0 or pit_index > 5:
+            return False
+        return self.board[pit_index][self.current_player.row] > 0
+
+    def make_move(self, pit_index):
+        # Use the provided `boardChange` function
+        self.board, self.player1.score, self.player2.score = boardChange(
+            self.board,
+            pit_index,
+            1 if self.current_player == self.player1 else 2,
+            self.player1.score,
+            self.player2.score,
+        )
+
+    def switch_player(self):
+        self.current_player = (
+            self.player2 if self.current_player == self.player1 else self.player1
+        )
+
+    def check_game_end(self):
+        bottom_row_empty = all(pit[0] == 0 for pit in self.board)
+        top_row_empty = all(pit[1] == 0 for pit in self.board)
+
+        if bottom_row_empty or top_row_empty:
+            # Add remaining stones to respective scores
+            self.player1.score += sum(pit[0] for pit in self.board)
+            self.player2.score += sum(pit[1] for pit in self.board)
+            return True
+        return False
+
+    def declare_winner(self):
+        if self.player1.score > self.player2.score:
+            return f"{self.player1.name} wins with {self.player1.score} points!"
+        elif self.player2.score > self.player1.score:
+            return f"{self.player2.name} wins with {self.player2.score} points!"
+        return "It's a tie!"
+
+    def play(self):
+        print("Welcome to Mancala!")
+        self.print_board()
+
+        while not self.check_game_end():
+            print(f"\n{self.current_player.name}'s turn!")
+            valid_move = False
+            while not valid_move:
+                try:
+                    pit_index = int(
+                        input(
+                            f"Select a pit (0-5) to move stones from: "
+                        )
+                    )
+                    if self.is_valid_move(pit_index):
+                        valid_move = True
+                    else:
+                        print("Invalid move! Pit is empty or out of range.")
+                except ValueError:
+                    print("Invalid input. Please enter a number between 0 and 5.")
+
+            self.make_move(pit_index)
+
+            # Check if game ends
+            if self.check_game_end():
+                break
+
+            self.switch_player()
+
+        print("\nGame Over!")
+        print(self.declare_winner())
+
+
+# Main Game Execution
+if __name__ == "__main__":
+    game = MancalaGame("Alice", "Bob")
+    game.play()
+
+
+# Main Game Execution
+if __name__ == "__main__":
+    game = MancalaGame("Alice", "Bob")
+    game.play()

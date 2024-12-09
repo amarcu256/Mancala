@@ -1,246 +1,205 @@
-def move(board,playerNum):
-    place=int(input("Please enter which placement you would like to move."))
-    if playerNum == 1:
-        return place
-    
-
-class MancalaPlayerScore:
-    def __init__(self, player_name):
-        self.player_name = player_name
-        self.score = 0
-
-    def add_points(self, points):
-        self.score += points
-
-    def get_score(self):
-        return self.score
-
-    def reset_score(self):
-        self.score = 0
-
-
-def printBoard(x, player1Score, player2Score):
-    player1_str = str(player1Score)
-    player2_str = str(player2Score)
-    
-    if len(player1_str) == 1:
-        player1_str = "  " + player1_str + "  "
-    elif len(player1_str) == 2:
-        player1_str = " " + player1_str + " "
-    
-    if len(player2_str) == 1:
-        player2_str = "  " + player2_str + "  "
-    elif len(player2_str) == 2:
-        player2_str = " " + player2_str + " "
-
-    print("|" + player2_str + "|")
-    
-    for i in range(6):
-        left = str(x[i][0])
-        right = str(x[i][1])
-
-        if len(left) == 1:
-            left = " " + left
-        if len(right) == 1:
-            right = " " + right
-
-        print("|" + left + " | " + right + "|")
-
-    print("|" + player1_str + "|")
-
 import time
 
-def boardChange(board, pitIndex, currentPlayer, player1Score, player2Score):
-    if pitIndex < 0 or pitIndex > 5 or currentPlayer not in [1, 2]:
-        print("Invalid move!")
-        return board, player1Score, player2Score
+class Mancala:
+    def __init__(self):
+        self.initialize_board()
+        self.current_player = 1
+        self.sequence_processed = self.initialize_sequence_flags()
 
-    row = 0 if currentPlayer == 1 else 1
-    stones = board[pitIndex][row]
+    def initialize_board(self):
+        self.board = [4, 4, 4, 4, 4, 4, 0, 4, 4, 4, 4, 4, 4, 0]
 
-    if stones == 0:
-        print("Selected pit is empty! Choose another.")
-        return board, player1Score, player2Score
+    def initialize_sequence_flags(self):
+        return {"1-2-3": False, "8-8": False, "6-9": False}
 
-    board[pitIndex][row] = 0
-    currentPit = pitIndex
-    
+    def display_board(self):
+        self.print_divider()
+        print("Player 2 Pool: ", self.board[13])
+        print("Player 2 Side: ", self.format_side(self.board[12:6:-1]))
+        print("Player 1 Side: ", self.format_side(self.board[:6]))
+        print("Player 1 Pool: ", self.board[6])
+        self.print_divider()
 
-    while stones > 0:
-        leland = 0
-        if row == 0:
-            if currentPlayer==1:
-                currentPit += 1
-                if currentPit == 6:
-                    if currentPlayer == 1:
-                        player1Score += 1
-                        stones -= 1
-                    if stones > 0: 
-                        row = 1 
-                        currentPit = 5 
-                elif stones > 0: 
-                    board[currentPit][row] += 1
-                    stones -= 1
-            else:
-                
-                if currentPit == 6: 
-                    if currentPlayer == 1:
-                        player1Score += 1
-                        stones -= 1
-                    if stones > 0:  
-                        row = 1  
-                        currentPit = 5  
-                elif stones > 0: 
-                    board[currentPit][row] += 1
-                    stones -= 1
-                currentPit += 1
-        else:
-            if currentPlayer==2:
-                currentPit-=1
-                if currentPit == -1:
-                    if currentPlayer == 2:
-                        player2Score += 1
-                        stones -= 1
-                    if stones > 0: 
-                        row = 0  
-                        currentPit = 0 
-                elif stones > 0: 
-                    board[currentPit][row] += 1
-                    stones -= 1
-            else:
-                if currentPit == -1:  
-                    if currentPlayer == 2:
-                       player2Score += 1
-                       stones -= 1
-                    if stones > 0:  
-                        row = 0  
-                        currentPit = 0  
-                elif stones > 0:  
-                    board[currentPit][row] += 1
-                    stones -= 1
-                currentPit-=1
+    def format_side(self, side):
+        return " ".join(map(str, side))
 
-        print()
-        printBoard(board, player1Score, player2Score)
-        time.sleep(0.5)
+    def print_divider(self):
+        print("\n-------------------------------")
 
-    return board, player1Score, player2Score
-
-class Player:
-    def __init__(self, name, row):
-        self.name = name
-        self.row = row 
-        self.score = 0
-
-    def add_score(self, points):
-        self.score += points
-
-
-class Player:
-    def __init__(self, name, row):
-        self.name = name
-        self.row = row
-        self.score = 0
-
-    def add_score(self, points):
-        self.score += points
-
-
-class MancalaGame:
-    def __init__(self, player1_name="Player 1", player2_name="Player 2"):
-        self.board = [[4, 4] for _ in range(6)] 
-        self.player1 = Player(player1_name, 0)
-        self.player2 = Player(player2_name, 1)
-        self.current_player = self.player1
-
-        player1_score = str(self.player1.score).zfill(2)
-        player2_score = str(self.player2.score).zfill(2)
-
-        print("|" + player2_score.center(6) + "|")
-        for i in range(6):
-            top = str(self.board[i][1]).zfill(2)
-            bottom = str(self.board[i][0]).zfill(2)
-            print(f"| {top} | {bottom} |")
-        print("|" + player1_score.center(6) + "|")
-
-    def is_valid_move(self, pit_index):
-        if pit_index < 0 or pit_index > 5:
+    def take_turn(self, pit):
+        if not self.validate_pit(pit):
             return False
-        return self.board[pit_index][self.current_player.row] > 0
 
-    def make_move(self, pit_index):
-        # Use the provided `boardChange` function
-        self.board, self.player1.score, self.player2.score = boardChange(
-            self.board,
-            pit_index,
-            1 if self.current_player == self.player1 else 2,
-            self.player1.score,
-            self.player2.score,
-        )
+        seeds = self.board[pit]
+        self.board[pit] = 0
+        position = pit
 
-    def switch_player(self):
-        self.current_player = (
-            self.player2 if self.current_player == self.player1 else self.player1
-        )
+        print("Sowing seeds...")
+        while seeds > 0:
+            position = self.increment_position(position)
+            if self.should_skip_position(position):
+                continue
+            self.board[position] += 1
+            seeds -= 1
+            self.display_board()
+            time.sleep(0.5)
 
-    def check_game_end(self):
-        bottom_row_empty = all(pit[0] == 0 for pit in self.board)
-        top_row_empty = all(pit[1] == 0 for pit in self.board)
+        self.reset_sequence_flags()
+        self.process_sequences()
 
-        if bottom_row_empty or top_row_empty:
-            # Add remaining stones to respective scores
-            self.player1.score += sum(pit[0] for pit in self.board)
-            self.player2.score += sum(pit[1] for pit in self.board)
+        if self.apply_capture_rule(position):
+            self.display_board()
+
+        if self.landed_in_own_pool(position):
+            print("You landed in your seed pool! Take another turn.")
+            return True
+
+        self.switch_player()
+        return True
+
+    def validate_pit(self, pit):
+        if self.current_player == 1 and (pit < 0 or pit > 5):
+            print("Invalid pit. Choose between 0 and 5.")
+            return False
+        if self.current_player == 2 and (pit < 7 or pit > 12):
+            print("Invalid pit. Choose between 7 and 12.")
+            return False
+        if self.board[pit] == 0:
+            print("Selected pit is empty.")
+            return False
+        return True
+
+    def increment_position(self, position):
+        return (position + 1) % 14
+
+    def should_skip_position(self, position):
+        return (self.current_player == 1 and position == 13) or (self.current_player == 2 and position == 6)
+
+    def reset_sequence_flags(self):
+        for key in self.sequence_processed:
+            self.sequence_processed[key] = False
+
+    def process_sequences(self):
+        self.check_sequences_on_side(0, 6)
+        self.check_sequences_on_side(7, 13)
+
+    def check_sequences_on_side(self, start, end):
+        self.check_123_sequence(start, end)
+        self.check_88_sequence(start, end)
+        self.check_69_sequence(start, end)
+
+    def check_123_sequence(self, start, end):
+        for i in range(start, end - 2):
+            if not self.sequence_processed["1-2-3"] and self.board[i:i+3] == [1, 2, 3]:
+                print("1-2-3 sequence found! Stealing seeds.")
+                self.steal_seeds(i)
+                self.sequence_processed["1-2-3"] = True
+
+    def check_88_sequence(self, start, end):
+        for i in range(start, end - 1):
+            if not self.sequence_processed["8-8"] and self.board[i:i+2] == [8, 8]:
+                print("8-8 sequence found! Swapping pits.")
+                self.swap_pits(i)
+                self.sequence_processed["8-8"] = True
+
+    def check_69_sequence(self, start, end):
+        player_side = self.board[start:end]
+        if not self.sequence_processed["6-9"] and player_side == [6, 9]:
+            print("6-9 sequence found! Swapping all pits.")
+            self.swap_all_pits()
+            self.sequence_processed["6-9"] = True
+
+    def apply_capture_rule(self, last_position):
+        if self.should_capture_seeds(last_position):
+            opposing_pit = 12 - last_position
+            captured_seeds = self.board[opposing_pit]
+            self.add_to_pool(captured_seeds + 1)
+            self.clear_captured_pits(last_position, opposing_pit)
+            print("Capture rule! Captured seeds: ", captured_seeds + 1)
             return True
         return False
 
+    def should_capture_seeds(self, position):
+        if self.current_player == 1:
+            return 0 <= position <= 5 and self.board[position] == 1
+        if self.current_player == 2:
+            return 7 <= position <= 12 and self.board[position] == 1
+        return False
+
+    def add_to_pool(self, seeds):
+        if self.current_player == 1:
+            self.board[6] += seeds
+        else:
+            self.board[13] += seeds
+
+    def clear_captured_pits(self, player_pit, opposing_pit):
+        self.board[player_pit] = 0
+        self.board[opposing_pit] = 0
+
+    def landed_in_own_pool(self, position):
+        return (self.current_player == 1 and position == 6) or (self.current_player == 2 and position == 13)
+
+    def switch_player(self):
+        self.current_player = 2 if self.current_player == 1 else 1
+
+    def steal_seeds(self, start_index):
+        for i in range(3):
+            opponent_index = 12 - (start_index + i)
+            if self.board[opponent_index] >= self.board[start_index + i]:
+                self.board[start_index + i] += self.board[opponent_index]
+                self.board[opponent_index] = 0
+                self.display_board()
+                time.sleep(0.5)
+
+    def swap_pits(self, start_index):
+        for i in range(2):
+            player_pit = start_index + i
+            opponent_pit = 12 - player_pit
+            self.swap_two_pits(player_pit, opponent_pit)
+
+    def swap_two_pits(self, pit1, pit2):
+        self.board[pit1], self.board[pit2] = self.board[pit2], self.board[pit1]
+        self.display_board()
+        time.sleep(0.5)
+
+    def swap_all_pits(self):
+        for i in range(6):
+            self.swap_two_pits(i, 12 - i)
+
+    def check_game_over(self):
+        if self.is_game_over():
+            print("Game over!")
+            self.declare_winner()
+            return True
+        return False
+
+    def is_game_over(self):
+        return sum(self.board[:6]) == 0 or sum(self.board[7:13]) == 0
+
     def declare_winner(self):
-        if self.player1.score > self.player2.score:
-            return f"{self.player1.name} wins with {self.player1.score} points!"
-        elif self.player2.score > self.player1.score:
-            return f"{self.player2.name} wins with {self.player2.score} points!"
-        return "It's a tie!"
+        if sum(self.board[:6]) > sum(self.board[7:13]):
+            print("Player 1 wins!")
+        elif sum(self.board[:6]) < sum(self.board[7:13]):
+            print("Player 2 wins!")
+        else:
+            print("It's a draw!")
 
     def play(self):
-        print("Welcome to Mancala!")
-        self.print_board()
+        print("Welcome to Marcu Mancala!")
+        print("Player 1: Your seed pits are 0, 1, 2, 3, 4, 5\nPlayer 2: Your seed pits are 7, 8, 9, 10, 11, 12")
+        print("\nIf a player has any seed pit sequence of 1 2 3, 8 8, or 6 9, the player with said sequence will suffer these effects:\n1 2 and 3 in a row will pull these exact amount of seeds from the\nopposing player's side from the seed pits directly across from them (if the amount exists).\n 8 and 8 will swap the player's following pit, with the opposing player's corresponding pit.\n Getting 6 and a 9 will then entirely swap the player's 6 pits (excluding their seed pool). ")
+        while not self.check_game_over():
+            self.display_board()
+            print("Player ", self.current_player, "'s turn!")
+            try:
+                pit = int(input("Choose a pit: "))
+                if self.take_turn(pit):
+                    continue
+            except ValueError:
+                print("Invalid input. Enter a number.")
 
-        while not self.check_game_end():
-            print(f"\n{self.current_player.name}'s turn!")
-            valid_move = False
-            while not valid_move:
-                try:
-                    pit_index = int(
-                        input(
-                            f"Select a pit (0-5) to move stones from: "
-                        )
-                    )
-                    if self.is_valid_move(pit_index):
-                        valid_move = True
-                    else:
-                        print("Invalid move! Pit is empty or out of range.")
-                except ValueError:
-                    print("Invalid input. Please enter a number between 0 and 5.")
-
-            self.make_move(pit_index)
-
-            # Check if game ends
-            if self.check_game_end():
-                break
-
-            self.switch_player()
-
-        print("\nGame Over!")
-        print(self.declare_winner())
-
-
-# Main Game Execution
+# Start the game
 if __name__ == "__main__":
-    game = MancalaGame("Alice", "Bob")
-    game.play()
-
-
-# Main Game Execution
-if __name__ == "__main__":
-    game = MancalaGame("Alice", "Bob")
+    
+    game = Mancala()
     game.play()
